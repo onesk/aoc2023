@@ -23,7 +23,7 @@ function sumLinesWith (input: string, eachLine: (line: string) => [number, numbe
 }
 
 function explicitExtract (line: string): [number, number] {
-  return extractFirstAndLastDigits(/(\d)/g, {}, line)
+  return extractFirstAndLastDigits(/(\d)/g, {}, line) ?? [0, 0]
 }
 
 function spelledOutExtract (line: string): [number, number] {
@@ -40,7 +40,7 @@ function spelledOutExtract (line: string): [number, number] {
     nine: 9
   }
 
-  return extractFirstAndLastDigits(realDigits, names, line)
+  return extractFirstAndLastDigits(realDigits, names, line) ?? [0, 0]
 }
 
 export function day1 (input: string): number {

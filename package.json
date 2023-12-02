@@ -29,7 +29,7 @@
   "scripts": {
     "lint:js": "eslint . --ext .ts",
     "format": "eslint . --fix --ext .ts",
-    "test": "jest --detectOpenHandles --maxConcurrency=1",
+    "test": "jest",
     "build": "tsc",
     "postbuild": "copyfiles -u 1 src/**/*.txt dist/"
   }
