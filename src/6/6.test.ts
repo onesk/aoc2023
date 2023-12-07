@@ -9,13 +9,13 @@ describe('Day 6', () => {
   given('example1', () => readFile(__dirname, 'example1.txt'))
 
   it('solves first example', () => {
-    const lowestLocation = day1(given.example1)
-    expect(lowestLocation).toBe(288)
+    const product = day1(given.example1)
+    expect(product).toBe(288)
   })
 
   it('solves second example', () => {
-    const sum = day2(given.example1)
-    expect(sum).toBe(71503)
+    const product = day2(given.example1)
+    expect(product).toBe(71503)
   })
 
   it('solves both challenges', () => {
