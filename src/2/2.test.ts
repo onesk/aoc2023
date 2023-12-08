@@ -23,12 +23,12 @@ describe('Day 2', () => {
         })
   })
 
-  it('solves first example', () => {
+  it('solves first part on example', () => {
     const sum = day1(given.example1)
     expect(sum).toBe(8)
   })
 
-  it('solves second example', () => {
+  it('solves second part on example', () => {
     const sumProduct = day2(given.example1)
     expect(sumProduct).toBe(2286)
   })

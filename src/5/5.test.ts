@@ -8,12 +8,12 @@ describe('Day 5', () => {
   given('problem', () => readFile(__dirname, 'problem.txt'))
   given('example1', () => readFile(__dirname, 'example1.txt'))
 
-  it('solves first example', () => {
+  it('solves first part on example', () => {
     const lowestLocation = day1(given.example1)
     expect(lowestLocation).toBe(35n)
   })
 
-  it('solves second example', () => {
+  it('solves second part on example', () => {
     const lowestLocation = day2(given.example1)
     expect(lowestLocation).toBe(46n)
   })

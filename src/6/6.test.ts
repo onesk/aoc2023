@@ -8,12 +8,12 @@ describe('Day 6', () => {
   given('problem', () => readFile(__dirname, 'problem.txt'))
   given('example1', () => readFile(__dirname, 'example1.txt'))
 
-  it('solves first example', () => {
+  it('solves first part on example', () => {
     const product = day1(given.example1)
     expect(product).toBe(288)
   })
 
-  it('solves second example', () => {
+  it('solves second part on example', () => {
     const product = day2(given.example1)
     expect(product).toBe(71503)
   })

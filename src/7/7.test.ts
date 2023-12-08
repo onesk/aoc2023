@@ -27,12 +27,12 @@ describe('Day 7', () => {
     expect(determineType('QQQJA', true)).toEqual([5, 'fourOfAKind'])
   })
 
-  it('solves first example', () => {
+  it('solves first part on example', () => {
     const totalWinnings = day1(given.example1)
     expect(totalWinnings).toBe(6440)
   })
 
-  it('solves second example', () => {
+  it('solves second part on example', () => {
     const totalWinnings = day2(given.example1)
     expect(totalWinnings).toBe(5905)
   })
