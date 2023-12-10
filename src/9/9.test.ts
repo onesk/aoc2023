@@ -14,12 +14,12 @@ describe('Day 9', () => {
   })
 
   it('solves second part on example', () => {
-    const product = day2(given.example1)
-    expect(product).toBe(2)
+    const sum = day2(given.example1)
+    expect(sum).toBe(2)
   })
 
   it('solves both challenges', () => {
     expect(day1(given.problem)).toBe(1819125966)
-    // expect(day2(given.problem)).toBe(36872656)
+    expect(day2(given.problem)).toBe(1140)
   })
 })
