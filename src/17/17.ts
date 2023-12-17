@@ -9,13 +9,11 @@ const MaxStraightUltra = 10
 
 const Dirs: [Coord, Coord, Coord, Coord] = [[0, 1], [-1, 0], [0, -1], [1, 0]]
 
-class Heap<E extends { key: string, priority: number }> {
+class Heap<E extends { key: number, priority: number }> {
   binHeap: E[]
-  xref: Map<string, number>
 
   constructor () {
     this.binHeap = []
-    this.xref = new Map()
   }
 
   popMin (): E | undefined {
@@ -28,37 +26,21 @@ class Heap<E extends { key: string, priority: number }> {
     this.binHeap[0] = this.binHeap[this.binHeap.length - 1]
     this.binHeap.pop()
 
-    this.xref.delete(min.key)
-
     if (this.binHeap.length > 0) {
-      this.xref.set(this.binHeap[0].key, 0)
       this.diveDown(0)
     }
 
     return min
   }
 
-  tryImprove (elem: E): void {
-    const key = elem.key
-    const heapIdx = this.xref.get(key)
-
-    if (heapIdx === undefined) {
-      if (elem.priority !== Infinity) {
-        this.binHeap.push(elem)
-        this.xref.set(elem.key, this.binHeap.length - 1)
-        this.floatUp(this.binHeap.length - 1)
-      }
-    } else if (elem.priority < this.binHeap[heapIdx].priority) {
-      this.binHeap[heapIdx] = elem
-      this.floatUp(heapIdx)
-    }
+  push (elem: E): void {
+    this.binHeap.push(elem)
+    this.floatUp(this.binHeap.length - 1)
   }
 
-  floatUp (index: number): number {
+  floatUp (index: number): void {
     const cElem = this.binHeap[index]
     const cPrio = cElem.priority
-
-    let floated = false
 
     while (index > 0) {
       const parent = ~~((index - 1) / 2)
@@ -67,25 +49,15 @@ class Heap<E extends { key: string, priority: number }> {
       }
 
       this.binHeap[index] = this.binHeap[parent]
-      this.xref.set(this.binHeap[index].key, index)
-
       index = parent
-      floated = true
     }
 
-    if (floated) {
-      this.binHeap[index] = cElem
-      this.xref.set(cElem.key, index)
-    }
-
-    return index
+    this.binHeap[index] = cElem
   }
 
-  diveDown (index: number): number {
+  diveDown (index: number): void {
     const cElem = this.binHeap[index]
     const cPrio = cElem.priority
-
-    let dived = false
 
     while (true) {
       const leftPrio = this.binHeap[index * 2 + 1]?.priority ?? Infinity
@@ -98,30 +70,30 @@ class Heap<E extends { key: string, priority: number }> {
       const minIdx = index * 2 + (leftPrio < rightPrio ? 1 : 2)
 
       this.binHeap[index] = this.binHeap[minIdx]
-      this.xref.set(this.binHeap[index].key, index)
-
       index = minIdx
-      dived = true
     }
 
-    if (dived) {
-      this.binHeap[index] = cElem
-      this.xref.set(cElem.key, index)
-    }
-
-    return index
+    this.binHeap[index] = cElem
   }
 }
 
 class Vertex {
-  key: string
+  key: number
 
-  constructor (private readonly isUltra: boolean, private readonly prevDirIdx: DirIdx | -1, private readonly prevDirSteps: number, private readonly coord: Coord, private readonly dest: Coord, readonly priority: number) {
+  constructor (
+    private readonly isUltra: boolean,
+    private readonly maxI: number,
+    private readonly prevDirIdx: DirIdx | -1,
+    private readonly prevDirSteps: number,
+    private readonly coord: Coord,
+    private readonly dest: Coord,
+    readonly priority: number) {
     this.key = this.keyForSteps(this.prevDirSteps)
   }
 
-  keyForSteps (prevDirSteps: number): string {
-    return `${this.coord[0]}:${this.coord[1]}:${prevDirSteps}:${this.prevDirIdx}`
+  keyForSteps (prevDirSteps: number): number {
+    const coord = (this.coord[0] + this.maxI * this.coord[1]) * MaxStraightUltra * 5
+    return coord + prevDirSteps * 5 + this.prevDirIdx
   }
 
   isDest (): boolean {
@@ -136,12 +108,12 @@ class Vertex {
     return this.isUltra ? MaxStraightUltra : MaxStraight
   }
 
-  markedKeys (): string[] {
+  markedKeys (): number[] {
     if (this.isUltra && this.prevDirSteps < MinStraightUltra) {
       return [this.keyForSteps(this.prevDirSteps)]
     }
 
-    const ret: string[] = []
+    const ret: number[] = []
     for (let prevDirSteps = this.prevDirSteps; prevDirSteps <= this.maxStraight(); prevDirSteps++) {
       ret.push(this.keyForSteps(prevDirSteps))
     }
@@ -176,7 +148,7 @@ class Vertex {
 
       const [ni, nj] = [ci + di, cj + dj]
       const priority = this.priority + (p.heatLoss[ni]?.[nj] ?? Infinity)
-      return [new Vertex(this.isUltra, dirIdx as DirIdx, newDir ? 1 : this.prevDirSteps + 1, [ni, nj], this.dest, priority)]
+      return [new Vertex(this.isUltra, this.maxI, dirIdx as DirIdx, newDir ? 1 : this.prevDirSteps + 1, [ni, nj], this.dest, priority)]
     })
   }
 }
@@ -194,17 +166,21 @@ class Problem {
     this.maxJ = this.heatLoss[0]?.length ?? 0
   }
 
-  aStar (start: Coord, dest: Coord, isUltra: boolean): number {
+  aStar (start: Coord, dest: Coord, maxI: number, isUltra: boolean): number {
     const heap = new Heap<Vertex>()
-    const visited = new Set<string>()
+    const visited = new Set<number>()
 
-    heap.tryImprove(new Vertex(isUltra, -1, 0, start, dest, 0))
+    heap.push(new Vertex(isUltra, maxI, -1, 0, start, dest, 0))
 
     while (true) {
       const minVertex = heap.popMin()
 
       if (minVertex === undefined) {
         return Infinity
+      }
+
+      if (visited.has(minVertex.key)) {
+        continue
       }
 
       if (minVertex.isDest()) {
@@ -217,7 +193,7 @@ class Problem {
 
       for (const adjVertex of minVertex.adjacent(this)) {
         if (!visited.has(adjVertex.key)) {
-          heap.tryImprove(adjVertex)
+          heap.push(adjVertex)
         }
       }
     }
@@ -226,7 +202,7 @@ class Problem {
 
 function solveAstar (input: string, isUltra: boolean): number {
   const problem = new Problem(input)
-  const minTotalHeatLoss = problem.aStar([0, 0], [problem.maxI - 1, problem.maxJ - 1], isUltra)
+  const minTotalHeatLoss = problem.aStar([0, 0], [problem.maxI - 1, problem.maxJ - 1], problem.maxI, isUltra)
   return minTotalHeatLoss
 }
 
