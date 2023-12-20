@@ -4,7 +4,7 @@ import given from 'given2'
 
 import { day1, day2 } from './19'
 
-describe('Day 18', () => {
+describe('Day 19', () => {
   given('problem', () => readFile(__dirname, 'problem.txt'))
   given('example1', () => readFile(__dirname, 'example1.txt'))
 
