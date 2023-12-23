@@ -8,17 +8,19 @@ interface Problem {
   matrix: string[]
 }
 
-function key(i: number, j: number): Key {
+function key (i: number, j: number): Key {
   return i * 100000000 + j
 }
 
 interface Edge {
   node: Key
   weight: number
+  zone: number | undefined
 }
 
 interface Digraph {
   start: Key
+  dest: Key
   adj: Map<Key, Edge[]>
 }
 
@@ -34,27 +36,57 @@ type Coord = [number, number]
 const Dirs = {
   '<': [0, -1],
   '>': [0, +1],
-  'v': [+1, 0],
+  v: [+1, 0],
   '^': [-1, 0]
 }
 
-function compressPaths({ maxI, maxJ, matrix }: Problem, downward: boolean): Digraph {
-  const adj: Map<Key, Edge[]> = new Map()
+function compressPaths ({ maxI, maxJ, matrix }: Problem, downward: boolean): Digraph {
+  const adj = new Map<Key, Edge[]>()
 
-  let startJ = -1
-  for (let j = 0; j < maxJ; j++) {
-    if (matrix[0]?.charAt(j) == '.') {
-      startJ = j
+  const zones = new Map<Key, number>()
+
+  let zoneId = 0
+
+  function mark (i: number, j: number): void {
+    const cchar = matrix[i]?.[j]
+    const nkey = key(i, j)
+    if (!zones.has(nkey) && cchar === '.') {
+      zones.set(nkey, zoneId)
+      for (const [di, dj] of Object.values(Dirs)) {
+        mark(i + di, j + dj)
+      }
     }
   }
 
-  function touch(key: Key): void {
+  for (let i = 0; i < maxI; i++) {
+    for (let j = 0; j < maxJ; j++) {
+      const nodeKey = key(i, j)
+      if (!zones.has(nodeKey) && matrix[i]?.[j] === '.') {
+        mark(i, j)
+        zoneId++
+      }
+    }
+  }
+
+  let [startJ, endJ] = [-1, -1]
+
+  for (let j = 0; j < maxJ; j++) {
+    if (matrix[0]?.charAt(j) === '.') {
+      startJ = j
+    }
+
+    if (matrix[maxI - 1]?.charAt(j) === '.') {
+      endJ = j
+    }
+  }
+
+  function touch (key: Key): void {
     if (!adj.has(key)) {
       adj.set(key, [])
     }
   }
 
-  function traverse(i: number, j: number, slope: string): void {
+  function traverse (i: number, j: number, slope: string): void {
     const nodeKey = key(i, j)
     if (adj.has(nodeKey)) {
       return
@@ -64,12 +96,12 @@ function compressPaths({ maxI, maxJ, matrix }: Problem, downward: boolean): Digr
 
     const [sdi, sdj] = Dirs[slope] ?? [0, 0]
 
-    let stack: { cur: Coord, prev: Coord, length: number }[] = [
-      { cur: [i+sdi, j+sdj], prev: [i, j], length: 0 }
+    const stack: Array<{ cur: Coord, prev: Coord, length: number }> = [
+      { cur: [i + sdi, j + sdj], prev: [i, j], length: 0 }
     ]
 
     if (!downward) {
-      stack.push({ cur: [i-sdi, j-sdj], prev: [i, j], length: 0 })
+      stack.push({ cur: [i - sdi, j - sdj], prev: [i, j], length: 0 })
     }
 
     const dummy = { cur: [0, 0], prev: [0, 0], length: 0 }
@@ -83,10 +115,10 @@ function compressPaths({ maxI, maxJ, matrix }: Problem, downward: boolean): Digr
       }
 
       if (cchar === '.') {
-        for (let [di, dj] of Object.values(Dirs)) {
-          let [ni, nj] = [ci+di, cj+dj]
+        for (const [di, dj] of Object.values(Dirs)) {
+          const [ni, nj] = [ci + di, cj + dj]
           if (ni !== pi || nj !== pj) {
-            stack.push({ cur: [ni, nj], prev: [ci, cj], length: clength+1 })
+            stack.push({ cur: [ni, nj], prev: [ci, cj], length: clength + 1 })
           }
         }
 
@@ -102,7 +134,8 @@ function compressPaths({ maxI, maxJ, matrix }: Problem, downward: boolean): Digr
         continue
       }
 
-      adj.get(nodeKey)?.push({ node: ckey, weight: clength + (cchar === undefined ? 0 : 1)})
+      const zone = zones.get(key(pi, pj))
+      adj.get(nodeKey)?.push({ zone, node: ckey, weight: clength + (cchar === undefined ? 0 : 1) })
 
       if (cchar !== undefined) {
         traverse(ci, cj, cchar)
@@ -110,48 +143,58 @@ function compressPaths({ maxI, maxJ, matrix }: Problem, downward: boolean): Digr
         touch(ckey)
       }
     }
-
   }
 
   const start = key(-1, startJ)
+  const dest = key(maxI, endJ)
+
   traverse(-1, startJ, 'v')
 
-  return { start, adj }
+  return { start, dest, adj }
 }
 
-function tsp({ start, adj }: Digraph): number {
+function tsp ({ start, dest, adj }: Digraph): number {
   let best = -1
 
-  const vis: Set<Key> = new Set()
+  const vis = new Set<Key>()
+  const visNode = new Set<number>()
 
-  function rec(cnode: Key, cweight: number, path: {node: number, weight: number}[]) {
+  function rec (cnode: Key, cweight: number): void {
     vis.add(cnode)
 
-    if (cweight > best) {
-      // console.log(JSON.stringify(path))
+    if (cnode === dest && cweight > best) {
+      best = cweight
     }
 
-    best = Math.max(best, cweight)
-    for (let { node, weight } of adj.get(cnode) ?? []) {
+    for (const { node, weight, zone } of adj.get(cnode) ?? []) {
       if (!vis.has(node)) {
-        let npath = [...path]
-        npath.push({node, weight: weight+cweight})
-        rec(node, cweight + weight, npath)
+        if (zone !== undefined) {
+          if (visNode.has(zone)) {
+            continue
+          } else {
+            visNode.add(zone)
+          }
+        }
+
+        rec(node, cweight + weight)
+
+        if (zone !== undefined) {
+          visNode.delete(zone)
+        }
       }
     }
 
     vis.delete(cnode)
   }
 
-  rec(start, 0, [])
+  rec(start, 0)
 
   return best
 }
 
-function solve(input: string, downward: boolean): number {
+function solve (input: string, downward: boolean): number {
   const problem = parse(input)
   const digraph = compressPaths(problem, downward)
-  // console.log(JSON.stringify({ start: digraph.start, adj: [...digraph.adj.entries()]}))
 
   const steps = tsp(digraph) - 1
   return steps
