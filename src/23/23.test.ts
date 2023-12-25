@@ -18,7 +18,7 @@ describe('Day 23', () => {
     expect(total).toBe(154)
   })
 
-  it.skip('solves both challenges', () => {
+  it('solves both challenges', () => {
     expect(day1(given.problem)).toBe(2034)
     // TODO uncomment once perf improves
     // expect(day2(given.problem)).toBe(70189)

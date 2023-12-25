@@ -117,7 +117,7 @@ export async function day2 (input: string): Promise<number> {
 
   const { Context, em } = await init()
 
-  const { Solver, Real, isReal } = Context('aoc2023')
+  const { Solver, Real } = Context('aoc2023')
 
   const solver = new Solver()
 

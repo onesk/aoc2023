@@ -32,5 +32,8 @@
     "test": "jest",
     "build": "tsc",
     "postbuild": "copyfiles -u 1 src/**/*.txt dist/"
+  },
+  "dependencies": {
+    "z3-solver": "^4.12.4"
   }
 }
